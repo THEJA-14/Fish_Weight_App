@@ -26,14 +26,18 @@ species_constants = {
     "Parkki": (0.010, 3.15)
 }
 
-threshold = 0.10  # 10% deviation for health classification
+threshold = 0.20  # ✅ 20% deviation for health classification
 
 # Label health status
 def label_health(row):
+    if row['Species'] not in species_constants:
+        return "Unknown"
+    
     a, b = species_constants[row['Species']]
     expected_weight = a * (row['Length3'] ** b)
     lower = expected_weight * (1 - threshold)
     upper = expected_weight * (1 + threshold)
+    
     if row['Weight'] < lower:
         return "Malnourished"
     elif row['Weight'] > upper:
@@ -46,8 +50,8 @@ df['Health'] = df.apply(label_health, axis=1)
 # Encode species
 df['Species_Code'] = df['Species'].astype('category').cat.codes
 
-# Features and target
-X = df[['Length1','Length2','Length3','Height','Width','Species_Code','Weight']]
+# ✅ Features: only size + species (no Weight to avoid leakage!)
+X = df[['Length1', 'Length2', 'Length3', 'Height', 'Width', 'Species_Code']]
 y = df['Health']
 
 # Train RandomForest classifier
@@ -59,4 +63,4 @@ classifier_path = os.path.join(ARTIFACTS_DIR, "health_classifier.pkl")
 with open(classifier_path, "wb") as f:
     pickle.dump(clf, f)
 
-print(f"Health classifier trained and saved successfully at {classifier_path}!")
+print(f"✅ Health classifier trained and saved successfully at {classifier_path}!")
